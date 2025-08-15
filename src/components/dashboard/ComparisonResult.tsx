@@ -6,7 +6,7 @@ export function ComparisonResult() {
   const { getComparisonResult, productTypes, currentProduct } = useAppStore()
   
   const comparison = getComparisonResult()
-  const currentTypeInfo = productTypes.find(pt => pt.value === currentProduct.type) || productTypes[0]
+  // const currentTypeInfo = productTypes.find(pt => pt.value === currentProduct.type) || productTypes[0]
 
   if (!comparison) {
     return null

@@ -198,8 +198,8 @@ export const useAppStore = create<AppState>()(
               const updated = { ...product, ...productUpdate }
               // Recalculate unit price if needed
               if ('quantity' in productUpdate || 'count' in productUpdate || 'price' in productUpdate) {
-                const { quantity, count, price } = updated
                 // Add unit price calculation here if needed by UI
+                // const { quantity, count, price } = updated
               }
               return updated
             }

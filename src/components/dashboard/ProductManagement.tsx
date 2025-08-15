@@ -286,7 +286,7 @@ export function ProductManagement() {
                       className="input-field w-full hidden md:block with-spinner"
                       step={1}
                       min={1}
-                      style={{ appearance: 'auto' as any }}
+                      style={{ appearance: 'auto' as React.CSSProperties['appearance'] }}
                     />
                     {/* Mobile: text input to ensure numeric keypad */}
                     <input
@@ -328,7 +328,7 @@ export function ProductManagement() {
                     className="input-field w-full hidden md:block with-spinner"
                     step={1}
                     min={1}
-                    style={{ appearance: 'auto' as any }}
+                    style={{ appearance: 'auto' as React.CSSProperties['appearance'] }}
                   />
                   {/* Mobile: text input to ensure numeric keypad */}
                   <input

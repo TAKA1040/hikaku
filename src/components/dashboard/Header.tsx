@@ -14,7 +14,7 @@ export function Header() {
     try {
       await signOut()
       toast.success('ログアウトしました')
-    } catch (error) {
+    } catch {
       toast.error('ログアウトに失敗しました')
     }
   }
