@@ -1,9 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase'
+import { createBrowserClient } from '@supabase/ssr'
 import { AuthUser } from '@/types'
+import { SupabaseClient, User } from '@supabase/supabase-js'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -17,29 +17,60 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const supabase: SupabaseClient = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
-    // デモ用：初期化時はローディング状態を解除
-    console.log('デモモード：認証プロバイダ初期化')
-    setLoading(false)
-  }, [])
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const supabaseUser: User = session.user;
+        setUser({
+          id: supabaseUser.id,
+          email: supabaseUser.email ?? null,
+          fullName: supabaseUser.user_metadata?.full_name ?? supabaseUser.user_metadata?.name ?? null,
+          avatarUrl: supabaseUser.user_metadata?.avatar_url ?? null,
+        });
+      }
+      setLoading(false);
+    };
+
+    getInitialSession();
+
+    const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session) {
+          const supabaseUser: User = session.user;
+          setUser({
+            id: supabaseUser.id,
+            email: supabaseUser.email ?? null,
+            fullName: supabaseUser.user_metadata?.full_name ?? supabaseUser.user_metadata?.name ?? null,
+            avatarUrl: supabaseUser.user_metadata?.avatar_url ?? null,
+          });
+        } else {
+          setUser(null);
+        }
+      }
+    );
+
+    return () => {
+      authListener?.unsubscribe();
+    };
+  }, [supabase.auth]);
 
   const signInWithGoogle = async () => {
-    // デモ用：実際のGoogleログインの代わりにダミーユーザーを作成
-    console.log('デモモード：ダミーユーザーでログイン')
-    setUser({
-      id: 'demo-user-123',
-      email: 'demo@example.com',
-      fullName: 'デモユーザー',
-      avatarUrl: undefined
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
     })
-    setLoading(false)
+    if (error) {
+      console.error('Google Sign-In Error:', error)
+    }
   }
 
   const signOut = async () => {
-    // デモ用：シンプルにユーザー状態をクリア
-    console.log('デモモード：ログアウト')
+    await supabase.auth.signOut()
     setUser(null)
   }
 
@@ -47,13 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     signInWithGoogle,
-    signOut
+    signOut,
   }
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   )
 }
 
