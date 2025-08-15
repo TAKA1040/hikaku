@@ -3,7 +3,7 @@
 import { useAppStore } from '@/store/useAppStore'
 
 export function ComparisonResult() {
-  const { getComparisonResult, productTypes, currentProduct } = useAppStore()
+  const { getComparisonResult, currentProduct } = useAppStore()
   
   const comparison = getComparisonResult()
   // const currentTypeInfo = productTypes.find(pt => pt.value === currentProduct.type) || productTypes[0]
