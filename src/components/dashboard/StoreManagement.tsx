@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAppStore } from '@/store/useAppStore'
+import { useSupabaseStores } from '@/hooks/useSupabaseStores'
 import { Store, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -12,7 +12,7 @@ interface StoreFormData {
 }
 
 export function StoreManagement() {
-  const { stores, addStore, updateStore, removeStore } = useAppStore()
+  const { stores, loading, error, addStore, updateStore, deleteStore } = useSupabaseStores()
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<StoreFormData>({
@@ -21,7 +21,7 @@ export function StoreManagement() {
     notes: ''
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!formData.name.trim()) {
@@ -30,16 +30,24 @@ export function StoreManagement() {
     }
 
     if (editingId) {
-      updateStore(editingId, formData)
-      toast.success('店舗情報を更新しました')
-      setEditingId(null)
+      const result = await updateStore(editingId, formData)
+      if (result) {
+        toast.success('店舗情報を更新しました')
+        setEditingId(null)
+        setFormData({ name: '', location: '', notes: '' })
+      } else {
+        toast.error('店舗の更新に失敗しました')
+      }
     } else {
-      addStore(formData)
-      toast.success('新しい店舗を追加しました')
-      setIsAdding(false)
+      const result = await addStore(formData)
+      if (result) {
+        toast.success('新しい店舗を追加しました')
+        setIsAdding(false)
+        setFormData({ name: '', location: '', notes: '' })
+      } else {
+        toast.error('店舗の追加に失敗しました')
+      }
     }
-    
-    setFormData({ name: '', location: '', notes: '' })
   }
 
   const handleEdit = (storeId: string) => {
@@ -61,11 +69,48 @@ export function StoreManagement() {
     setFormData({ name: '', location: '', notes: '' })
   }
 
-  const handleRemove = (storeId: string) => {
+  const handleRemove = async (storeId: string) => {
     if (confirm('この店舗を削除しますか？登録された商品も同時に削除されます。')) {
-      removeStore(storeId)
-      toast.success('店舗を削除しました')
+      const success = await deleteStore(storeId)
+      if (success) {
+        toast.success('店舗を削除しました')
+      } else {
+        toast.error('店舗の削除に失敗しました')
+      }
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="card">
+        <div className="card-header">
+          <h2 className="card-title flex items-center text-primary-800">
+            <Store className="w-6 h-6 mr-2" />
+            店舗管理
+          </h2>
+        </div>
+        <div className="p-8 text-center">
+          <div className="loading-spinner mx-auto mb-4"></div>
+          <p>店舗データを読み込み中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="card">
+        <div className="card-header">
+          <h2 className="card-title flex items-center text-primary-800">
+            <Store className="w-6 h-6 mr-2" />
+            店舗管理
+          </h2>
+        </div>
+        <div className="p-8 text-center text-red-600">
+          <p>エラー: {error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (

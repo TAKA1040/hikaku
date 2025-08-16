@@ -39,25 +39,17 @@ interface AppState {
   productTypes: ProductTypeInfo[]
   setProductTypes: (types: ProductTypeInfo[]) => void
 
-  // Stores
-  stores: StoreData[]
-  setStores: (stores: StoreData[]) => void
-  addStore: (store: StoreData) => void
-  updateStore: (id: string, store: Partial<StoreData>) => void
-  removeStore: (id: string) => void
-
-  // Products
-  products: ProductData[]
-  setProducts: (products: ProductData[]) => void
-  addProduct: (product: ProductData) => void
-  updateProduct: (id: string, product: Partial<ProductData>) => void
-  removeProduct: (id: string) => void
-
   // Cross-component intents
   productAddPrefill: Partial<ProductData> | null
   setProductAddPrefill: (prefill: Partial<ProductData> | null) => void
 
-  // Utility methods
+  // Legacy stores/products for comparison logic (fed from Supabase hooks)
+  legacyStores: StoreData[]
+  legacyProducts: ProductData[]
+  setLegacyStores: (stores: StoreData[]) => void
+  setLegacyProducts: (products: ProductData[]) => void
+
+  // Utility methods (now work with legacy data for comparison)
   getProductsByType: (type: string) => ProductData[]
   getCheapestProductByType: (type: string) => ProductData | null
   getComparisonResult: () => ComparisonResult | null
@@ -179,10 +171,10 @@ export const useAppStore = create<AppState>()(
       },
       clearUserData: () => set({
         currentUserId: null,
-        stores: [],
-        products: [],
+        legacyStores: [],
+        legacyProducts: [],
         currentProduct: defaultCurrentProduct,
-        productAddPrefill: {}
+        productAddPrefill: null
       }),
 
       // Current product
@@ -215,60 +207,20 @@ export const useAppStore = create<AppState>()(
       productTypes: defaultProductTypes,
       setProductTypes: (productTypes) => set({ productTypes }),
 
-      // Stores
-      stores: [],
-      setStores: (stores) => set({ stores }),
-      addStore: (store) =>
-        set((state) => ({
-          stores: [...state.stores, { ...store, id: store.id || crypto.randomUUID() }]
-        })),
-      updateStore: (id, storeUpdate) =>
-        set((state) => ({
-          stores: state.stores.map((store) =>
-            store.id === id ? { ...store, ...storeUpdate } : store
-          )
-        })),
-      removeStore: (id) =>
-        set((state) => ({
-          stores: state.stores.filter((store) => store.id !== id),
-          products: state.products.filter((product) => product.storeId !== id)
-        })),
-
-      // Products
-      products: [],
-      setProducts: (products) => set({ products }),
-      addProduct: (product) =>
-        set((state) => ({
-          products: [...state.products, { ...product, id: product.id || crypto.randomUUID() }]
-        })),
-      updateProduct: (id, productUpdate) =>
-        set((state) => ({
-          products: state.products.map((product) => {
-            if (product.id === id) {
-              const updated = { ...product, ...productUpdate }
-              // Recalculate unit price if needed
-              if ('quantity' in productUpdate || 'count' in productUpdate || 'price' in productUpdate) {
-                // Add unit price calculation here if needed by UI
-                // const { quantity, count, price } = updated
-              }
-              return updated
-            }
-            return product
-          })
-        })),
-      removeProduct: (id) =>
-        set((state) => ({
-          products: state.products.filter((product) => product.id !== id)
-        })),
+      // Legacy stores/products (for comparison logic only)
+      legacyStores: [],
+      legacyProducts: [],
+      setLegacyStores: (stores) => set({ legacyStores: stores }),
+      setLegacyProducts: (products) => set({ legacyProducts: products }),
 
       // Cross-component intents
       productAddPrefill: null,
       setProductAddPrefill: (prefill) => set({ productAddPrefill: prefill }),
 
-      // Utility methods
+      // Utility methods (work with legacy data from Supabase)
       getProductsByType: (type: string) => {
-        const { products } = get()
-        return products.filter((product) => product.productType === type)
+        const { legacyProducts } = get()
+        return legacyProducts.filter((product) => product.type === type)
       },
 
       getCheapestProductByType: (type: string) => {
@@ -276,23 +228,21 @@ export const useAppStore = create<AppState>()(
         const products = getProductsByType(type)
         if (products.length === 0) return null
         
-        return products.reduce((cheapest, current) => {
-          const currentUnitPrice = current.price / (current.quantity * current.count)
-          const cheapestUnitPrice = cheapest.price / (cheapest.quantity * cheapest.count)
-          return currentUnitPrice < cheapestUnitPrice ? current : cheapest
-        })
+        return products.reduce((cheapest, current) => 
+          current.unitPrice < cheapest.unitPrice ? current : cheapest
+        )
       },
 
       getComparisonResult: (): ComparisonResult | null => {
-        const { currentProduct, getCheapestProductByType, stores } = get()
+        const { currentProduct, getCheapestProductByType, legacyStores } = get()
         
         if (currentProduct.unitPrice === 0) return null
         
         const cheapestProduct = getCheapestProductByType(currentProduct.type)
         if (!cheapestProduct) return null
         
-        const cheapestUnitPrice = cheapestProduct.price / (cheapestProduct.quantity * cheapestProduct.count)
-        const store = stores.find(s => s.id === cheapestProduct.storeId)
+        const cheapestUnitPrice = cheapestProduct.unitPrice
+        const store = legacyStores.find(s => s.id === cheapestProduct.storeId)
         
         const savings = cheapestUnitPrice - currentProduct.unitPrice
         const savingsPercent = Math.abs((savings / cheapestUnitPrice) * 100)
@@ -318,10 +268,9 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         currentUserId: state.currentUserId,
-        stores: state.stores,
-        products: state.products,
         currentProduct: state.currentProduct,
         productAddPrefill: state.productAddPrefill
+        // Note: legacyStores and legacyProducts are not persisted - they come from Supabase
       }),
       // ユーザー切り替え時にストレージを再初期化
       onRehydrateStorage: () => (state) => {

@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSupabaseStores } from '@/hooks/useSupabaseStores'
+import { useSupabaseProducts } from '@/hooks/useSupabaseProducts'
 import { useAppStore, availableUnits } from '@/store/useAppStore'
 import { ShoppingBag, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
