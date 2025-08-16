@@ -96,9 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      <SupabaseDataProvider>
+      {/* Temporarily disabled SupabaseDataProvider until database is set up */}
+      {/* <SupabaseDataProvider> */}
         {children}
-      </SupabaseDataProvider>
+      {/* </SupabaseDataProvider> */}
     </AuthContext.Provider>
   )
 }

@@ -43,6 +43,18 @@ interface AppState {
   productAddPrefill: Partial<ProductData> | null
   setProductAddPrefill: (prefill: Partial<ProductData> | null) => void
 
+  // Stores and products data
+  stores: StoreData[]
+  products: ProductData[]
+  setStores: (stores: StoreData[]) => void
+  setProducts: (products: ProductData[]) => void
+  addStore: (store: StoreData) => void
+  updateStore: (id: string, updates: Partial<StoreData>) => void
+  removeStore: (id: string) => void
+  addProduct: (product: ProductData) => void
+  updateProduct: (id: string, updates: Partial<ProductData>) => void
+  removeProduct: (id: string) => void
+
   // Legacy stores/products for comparison logic (fed from Supabase hooks)
   legacyStores: StoreData[]
   legacyProducts: ProductData[]
@@ -162,6 +174,8 @@ export const useAppStore = create<AppState>()(
           // ユーザーが変わった場合、すべてのデータをクリア
           set({
             currentUserId: userId,
+            stores: [],
+            products: [],
             legacyStores: [],
             legacyProducts: [],
             currentProduct: defaultCurrentProduct,
@@ -171,6 +185,8 @@ export const useAppStore = create<AppState>()(
       },
       clearUserData: () => set({
         currentUserId: null,
+        stores: [],
+        products: [],
         legacyStores: [],
         legacyProducts: [],
         currentProduct: defaultCurrentProduct,
@@ -206,6 +222,35 @@ export const useAppStore = create<AppState>()(
       // Product types
       productTypes: defaultProductTypes,
       setProductTypes: (productTypes) => set({ productTypes }),
+
+      // Stores and products data
+      stores: [],
+      products: [],
+      setStores: (stores) => set({ stores }),
+      setProducts: (products) => set({ products }),
+      addStore: (store) => set((state) => ({
+        stores: [...state.stores, { ...store, id: store.id || crypto.randomUUID() }]
+      })),
+      updateStore: (id, updates) => set((state) => ({
+        stores: state.stores.map(store => 
+          store.id === id ? { ...store, ...updates } : store
+        )
+      })),
+      removeStore: (id) => set((state) => ({
+        stores: state.stores.filter(store => store.id !== id),
+        products: state.products.filter(product => product.storeId !== id)
+      })),
+      addProduct: (product) => set((state) => ({
+        products: [...state.products, { ...product, id: product.id || crypto.randomUUID() }]
+      })),
+      updateProduct: (id, updates) => set((state) => ({
+        products: state.products.map(product => 
+          product.id === id ? { ...product, ...updates } : product
+        )
+      })),
+      removeProduct: (id) => set((state) => ({
+        products: state.products.filter(product => product.id !== id)
+      })),
 
       // Legacy stores/products (for comparison logic only)
       legacyStores: [],
@@ -271,7 +316,9 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         currentUserId: state.currentUserId,
         currentProduct: state.currentProduct,
-        productAddPrefill: state.productAddPrefill
+        productAddPrefill: state.productAddPrefill,
+        stores: state.stores,
+        products: state.products
         // Note: legacyStores and legacyProducts are not persisted - they come from Supabase
       }),
       // Note: Storage key is dynamic based on user ID

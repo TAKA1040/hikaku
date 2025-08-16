@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSupabaseStores } from '@/hooks/useSupabaseStores'
-import { useSupabaseProducts } from '@/hooks/useSupabaseProducts'
 import { useAppStore, availableUnits } from '@/store/useAppStore'
 import { ShoppingBag, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -18,22 +16,20 @@ interface ProductFormData {
 }
 
 export function ProductManagement() {
-  const { stores: supabaseStores, addStore: addSupabaseStore } = useSupabaseStores()
   const { 
-    loading: productsLoading, 
-    error: productsError,
-    addProduct: addSupabaseProduct, 
-    updateProduct: updateSupabaseProduct, 
-    deleteProduct: deleteSupabaseProduct 
-  } = useSupabaseProducts()
-  const { 
+    stores,
+    products,
     productTypes, 
+    addProduct, 
+    updateProduct, 
+    removeProduct,
+    addStore,
     productAddPrefill,
     setProductAddPrefill,
   } = useAppStore()
   
-  // Use legacy stores/products from app store (fed by SupabaseDataProvider)
-  const { legacyStores: stores, legacyProducts: products } = useAppStore()
+  const productsLoading = false
+  const productsError = null
   
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -72,7 +68,7 @@ export function ProductManagement() {
     setProductAddPrefill(null)
   }, [productAddPrefill, productTypes, setProductAddPrefill])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const trimmedStore = storeInput.trim()
     if (!trimmedStore) {
@@ -91,20 +87,12 @@ export function ProductManagement() {
     }
 
     // Resolve storeId from name; auto-add if not exists
-    let useStoreId = supabaseStores.find(s => s.name === trimmedStore)?.id || ''
+    let useStoreId = stores.find(s => s.name === trimmedStore)?.id || ''
     if (!useStoreId) {
-      const newStore = await addSupabaseStore({ 
-        name: trimmedStore, 
-        location: '', 
-        notes: '' 
-      })
-      if (newStore) {
-        useStoreId = newStore.id!
-        toast.success('新しい店舗を追加しました')
-      } else {
-        toast.error('店舗の追加に失敗しました')
-        return
-      }
+      const newId = crypto.randomUUID()
+      addStore({ id: newId, name: trimmedStore, location: '', notes: '' })
+      useStoreId = newId
+      toast.success('新しい店舗を追加しました')
     }
 
     const payload = { 
@@ -118,23 +106,13 @@ export function ProductManagement() {
     }
 
     if (editingId) {
-      const success = await updateSupabaseProduct(editingId, payload)
-      if (success) {
-        toast.success('商品情報を更新しました')
-        setEditingId(null)
-      } else {
-        toast.error('商品の更新に失敗しました')
-        return
-      }
+      updateProduct(editingId, payload)
+      toast.success('商品情報を更新しました')
+      setEditingId(null)
     } else {
-      const success = await addSupabaseProduct(payload)
-      if (success) {
-        toast.success('新しい商品を追加しました')
-        setIsAdding(false)
-      } else {
-        toast.error('商品の追加に失敗しました')
-        return
-      }
+      addProduct(payload)
+      toast.success('新しい商品を追加しました')
+      setIsAdding(false)
     }
     
     setFormData({
@@ -183,14 +161,10 @@ export function ProductManagement() {
     setStoreInput('')
   }
 
-  const handleRemove = async (productId: string) => {
+  const handleRemove = (productId: string) => {
     if (confirm('この商品を削除しますか？')) {
-      const success = await deleteSupabaseProduct(productId)
-      if (success) {
-        toast.success('商品を削除しました')
-      } else {
-        toast.error('商品の削除に失敗しました')
-      }
+      removeProduct(productId)
+      toast.success('商品を削除しました')
     }
   }
 
@@ -302,7 +276,7 @@ export function ProductManagement() {
                   required
                 />
                 <datalist id="stores-list">
-                  {supabaseStores.map(s => (
+                  {stores.map(s => (
                     <option key={s.id} value={s.name} />
                   ))}
                 </datalist>
