@@ -329,6 +329,7 @@ export function ProductManagement() {
                       type="number"
                       value={formData.quantity || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value, 10) || 0 }))}
+                      onFocus={(e) => e.target.select()}
                       placeholder="数量"
                       className="input-field w-full hidden md:block with-spinner"
                       step={1}
@@ -341,6 +342,7 @@ export function ProductManagement() {
                       type="text"
                       value={formData.quantity || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value, 10) || 0 }))}
+                      onFocus={(e) => e.target.select()}
                       placeholder="数量"
                       className="input-field w-full md:hidden"
                       inputMode="numeric"
@@ -371,6 +373,7 @@ export function ProductManagement() {
                     type="number"
                     value={formData.count || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, count: parseInt(e.target.value, 10) || 1 }))}
+                    onFocus={(e) => e.target.select()}
                     placeholder="入り数"
                     className="input-field w-full hidden md:block with-spinner"
                     step={1}
@@ -383,6 +386,7 @@ export function ProductManagement() {
                     type="text"
                     value={formData.count || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, count: parseInt(e.target.value, 10) || 1 }))}
+                    onFocus={(e) => e.target.select()}
                     placeholder="入り数"
                     className="input-field w-full md:hidden"
                     inputMode="numeric"
@@ -400,6 +404,7 @@ export function ProductManagement() {
                   type="text"
                   value={formData.price || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value, 10) || 0 }))}
+                  onFocus={(e) => e.target.select()}
                   placeholder="価格"
                   className="input-field"
                   inputMode="numeric"
