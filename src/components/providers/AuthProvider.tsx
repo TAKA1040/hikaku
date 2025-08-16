@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       authListener?.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, [supabase.auth, clearUserData, setCurrentUserId]);
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
