@@ -75,7 +75,7 @@ export interface ComparisonResult {
 // Auth User Interface
 export interface AuthUser {
   id: string
-  email: string
+  email: string | null
   fullName?: string
   avatarUrl?: string
 }
