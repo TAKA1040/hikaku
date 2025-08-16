@@ -96,6 +96,10 @@
     @apply border-green-200 bg-green-50;
   }
 
+  .comparison-neutral {
+    @apply border-blue-200 bg-blue-50;
+  }
+
   .comparison-bad {
     @apply border-red-200 bg-red-50;
   }

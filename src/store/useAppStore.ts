@@ -259,7 +259,7 @@ export const useAppStore = create<AppState>()(
           },
           savings,
           savingsPercent,
-          isCurrentCheaper: savings > 0
+          isCurrentCheaper: savings >= 0
         }
       }
     }),

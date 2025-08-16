@@ -13,10 +13,16 @@ export function ComparisonResult() {
   }
 
   return (
-    <div className={`card text-center ${comparison.isCurrentCheaper ? 'comparison-good' : 'comparison-bad'}`}>
+    <div className={`card text-center ${
+      comparison.savings > 0 ? 'comparison-good' : 
+      comparison.savings === 0 ? 'comparison-neutral' : 
+      'comparison-bad'
+    }`}>
       <div className="space-y-6">
         <h3 className="text-3xl font-bold">
-          {comparison.isCurrentCheaper ? '🎉 お得です！' : '❌ いつものお店の方が安いです'}
+          {comparison.savings > 0 ? '🎉 お得です！' : 
+           comparison.savings === 0 ? '👌 同じ価格です' : 
+           '❌ いつものお店の方が安いです'}
         </h3>
         
         <div className="text-xl space-y-4">
@@ -51,9 +57,11 @@ export function ComparisonResult() {
           </div>
           
           <div className={`text-3xl font-bold ${
-            comparison.isCurrentCheaper ? 'text-success-700' : 'text-danger-700'
+            comparison.savings > 0 ? 'text-success-700' : 
+            comparison.savings === 0 ? 'text-blue-700' : 
+            'text-danger-700'
           }`}>
-            {comparison.isCurrentCheaper ? (
+            {comparison.savings > 0 ? (
               <div className="space-y-2">
                 <p>
                   {Math.abs(comparison.savings).toFixed(2)}円/{currentProduct.unit} 安い！
@@ -61,6 +69,11 @@ export function ComparisonResult() {
                 <p className="text-xl">
                   ({comparison.savingsPercent.toFixed(1)}% お得)
                 </p>
+              </div>
+            ) : comparison.savings === 0 ? (
+              <div className="space-y-2">
+                <p>価格は同じです</p>
+                <p className="text-xl">どちらで買っても同じ価格</p>
               </div>
             ) : (
               <div className="space-y-2">
