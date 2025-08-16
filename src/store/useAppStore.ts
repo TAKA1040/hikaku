@@ -169,10 +169,10 @@ export const useAppStore = create<AppState>()(
       // User management
       currentUserId: null,
       setCurrentUserId: (userId) => {
-        const { currentUserId } = get()
+        const { currentUserId, stores, products } = get()
         if (currentUserId !== userId) {
           // ユーザーが変わった場合、すべてのデータをクリア
-          set({
+          const newState: Partial<AppState> = {
             currentUserId: userId,
             stores: [],
             products: [],
@@ -180,7 +180,41 @@ export const useAppStore = create<AppState>()(
             legacyProducts: [],
             currentProduct: defaultCurrentProduct,
             productAddPrefill: null
-          })
+          }
+          
+          // 新しいユーザーの場合、サンプルデータを追加
+          if (userId && stores.length === 0 && products.length === 0) {
+            const sampleStores: StoreData[] = [
+              { id: crypto.randomUUID(), name: 'イオン○○店', location: '', notes: '' },
+              { id: crypto.randomUUID(), name: 'ドンキホーテ○○店', location: '', notes: '' }
+            ]
+            const sampleProducts: ProductData[] = [
+              {
+                id: crypto.randomUUID(),
+                storeId: sampleStores[0].id!,
+                productType: 'toilet_paper',
+                name: 'エリエール 12ロール',
+                quantity: 50,
+                unit: 'm',
+                count: 12,
+                price: 480
+              },
+              {
+                id: crypto.randomUUID(),
+                storeId: sampleStores[1].id!,
+                productType: 'toilet_paper',
+                name: 'ネピア 6ロール',
+                quantity: 30,
+                unit: 'm',
+                count: 6,
+                price: 298
+              }
+            ]
+            newState.stores = sampleStores
+            newState.products = sampleProducts
+          }
+          
+          set(newState)
         }
       },
       clearUserData: () => set({
@@ -223,7 +257,7 @@ export const useAppStore = create<AppState>()(
       productTypes: defaultProductTypes,
       setProductTypes: (productTypes) => set({ productTypes }),
 
-      // Stores and products data
+      // Stores and products data  
       stores: [],
       products: [],
       setStores: (stores) => set({ stores }),
@@ -264,8 +298,8 @@ export const useAppStore = create<AppState>()(
 
       // Utility methods (work with legacy data from Supabase)
       getProductsByType: (type: string) => {
-        const { legacyProducts } = get()
-        return legacyProducts.filter((product) => product.productType === type)
+        const { products } = get()
+        return products.filter((product) => product.productType === type)
       },
 
       getCheapestProductByType: (type: string) => {
@@ -281,7 +315,7 @@ export const useAppStore = create<AppState>()(
       },
 
       getComparisonResult: (): ComparisonResult | null => {
-        const { currentProduct, getCheapestProductByType, legacyStores } = get()
+        const { currentProduct, getCheapestProductByType, stores } = get()
         
         if (currentProduct.unitPrice === 0) return null
         
@@ -289,7 +323,7 @@ export const useAppStore = create<AppState>()(
         if (!cheapestProduct) return null
         
         const cheapestUnitPrice = cheapestProduct.quantity > 0 ? (cheapestProduct.price / (cheapestProduct.quantity * cheapestProduct.count)) : 0
-        const store = legacyStores.find(s => s.id === cheapestProduct.storeId)
+        const store = stores.find(s => s.id === cheapestProduct.storeId)
         
         const savings = cheapestUnitPrice - currentProduct.unitPrice
         const savingsPercent = Math.abs((savings / cheapestUnitPrice) * 100)
