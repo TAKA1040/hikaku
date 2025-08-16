@@ -41,7 +41,7 @@ export function Header() {
                 {user.avatarUrl && (
                   <Image
                     src={user.avatarUrl}
-                    alt={user.fullName || user.email}
+                    alt={user.fullName || user.email || 'User avatar'}
                     width={32}
                     height={32}
                     className="rounded-full"
@@ -93,7 +93,7 @@ export function Header() {
                   {user.avatarUrl && (
                     <Image
                       src={user.avatarUrl}
-                      alt={user.fullName || user.email}
+                      alt={user.fullName || user.email || 'User avatar'}
                       width={40}
                       height={40}
                       className="rounded-full"
@@ -103,7 +103,7 @@ export function Header() {
                     <p className="font-medium text-gray-900">
                       {user.fullName || user.email}
                     </p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <p className="text-sm text-gray-500">{user.email || 'No email'}</p>
                   </div>
                 </div>
               )}
