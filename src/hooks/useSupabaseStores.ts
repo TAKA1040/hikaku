@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createBrowserClient } from '@supabase/ssr'
 import { StoreData } from '@/types'
@@ -17,7 +17,7 @@ export function useSupabaseStores() {
   )
 
   // 店舗一覧を取得
-  const fetchStores = async () => {
+  const fetchStores = useCallback(async () => {
     if (!user) {
       setStores([])
       setLoading(false)
@@ -42,7 +42,7 @@ export function useSupabaseStores() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, supabase])
 
   // 店舗を追加
   const addStore = async (storeData: Omit<StoreData, 'id'>) => {
@@ -117,7 +117,7 @@ export function useSupabaseStores() {
 
   useEffect(() => {
     fetchStores()
-  }, [user])
+  }, [fetchStores])
 
   return {
     stores,

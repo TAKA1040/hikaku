@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createBrowserClient } from '@supabase/ssr'
 import { ProductData } from '@/types'
@@ -17,7 +17,7 @@ export function useSupabaseProducts() {
   )
 
   // 商品一覧を取得（店舗情報も含む）
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     if (!user) {
       setProducts([])
       setLoading(false)
@@ -45,14 +45,12 @@ export function useSupabaseProducts() {
       const transformedProducts: ProductData[] = (data || []).map(item => ({
         id: item.id,
         storeId: item.store_id,
-        storeName: item.stores.name,
-        type: item.product_type,
+        productType: item.product_type,
         name: item.name || '',
         quantity: Number(item.quantity),
         count: Number(item.count),
         price: Number(item.price),
-        unit: '', // product_typesから取得する必要あり
-        unitPrice: Number(item.unit_price)
+        unit: item.unit || 'm'
       }))
 
       setProducts(transformedProducts)
@@ -63,7 +61,7 @@ export function useSupabaseProducts() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, supabase])
 
   // 商品を追加
   const addProduct = async (productData: Omit<ProductData, 'id' | 'unitPrice'>) => {
@@ -75,9 +73,10 @@ export function useSupabaseProducts() {
         .insert([{
           user_id: user.id,
           store_id: productData.storeId,
-          product_type: productData.type,
+          product_type: productData.productType,
           name: productData.name || null,
           quantity: productData.quantity,
+          unit: productData.unit,
           count: productData.count,
           price: productData.price
         }])
@@ -101,11 +100,12 @@ export function useSupabaseProducts() {
 
     try {
       // ProductData形式からデータベース形式に変換
-      const dbUpdates: any = {}
+      const dbUpdates: Record<string, unknown> = {}
       if (updates.storeId !== undefined) dbUpdates.store_id = updates.storeId
-      if (updates.type !== undefined) dbUpdates.product_type = updates.type
+      if (updates.productType !== undefined) dbUpdates.product_type = updates.productType
       if (updates.name !== undefined) dbUpdates.name = updates.name || null
       if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity
+      if (updates.unit !== undefined) dbUpdates.unit = updates.unit
       if (updates.count !== undefined) dbUpdates.count = updates.count
       if (updates.price !== undefined) dbUpdates.price = updates.price
 
@@ -152,17 +152,19 @@ export function useSupabaseProducts() {
 
   // 商品タイプ別の最安商品を取得
   const getCheapestProductByType = (productType: string): ProductData | null => {
-    const typeProducts = products.filter(p => p.type === productType)
+    const typeProducts = products.filter(p => p.productType === productType)
     if (typeProducts.length === 0) return null
     
-    return typeProducts.reduce((cheapest, current) => 
-      current.unitPrice < cheapest.unitPrice ? current : cheapest
-    )
+    return typeProducts.reduce((cheapest, current) => {
+      const currentUnitPrice = current.quantity > 0 ? (current.price / (current.quantity * current.count)) : 0
+      const cheapestUnitPrice = cheapest.quantity > 0 ? (cheapest.price / (cheapest.quantity * cheapest.count)) : 0
+      return currentUnitPrice < cheapestUnitPrice ? current : cheapest
+    })
   }
 
   useEffect(() => {
     fetchProducts()
-  }, [user])
+  }, [fetchProducts])
 
   return {
     products,

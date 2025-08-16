@@ -18,17 +18,22 @@ interface ProductFormData {
 }
 
 export function ProductManagement() {
+  const { stores: supabaseStores, addStore: addSupabaseStore } = useSupabaseStores()
   const { 
-    stores, 
-    products, 
+    loading: productsLoading, 
+    error: productsError,
+    addProduct: addSupabaseProduct, 
+    updateProduct: updateSupabaseProduct, 
+    deleteProduct: deleteSupabaseProduct 
+  } = useSupabaseProducts()
+  const { 
     productTypes, 
-    addProduct, 
-    updateProduct, 
-    removeProduct,
-    addStore,
     productAddPrefill,
     setProductAddPrefill,
   } = useAppStore()
+  
+  // Use legacy stores/products from app store (fed by SupabaseDataProvider)
+  const { legacyStores: stores, legacyProducts: products } = useAppStore()
   
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -67,20 +72,12 @@ export function ProductManagement() {
     setProductAddPrefill(null)
   }, [productAddPrefill, productTypes, setProductAddPrefill])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmedStore = storeInput.trim()
     if (!trimmedStore) {
       toast.error('店舗名を入力または選択してください')
       return
-    }
-    // Resolve storeId from name; auto-add if not exists
-    let useStoreId = stores.find(s => s.name === trimmedStore)?.id || ''
-    if (!useStoreId) {
-      const newId = crypto.randomUUID()
-      addStore({ id: newId, name: trimmedStore, location: '', notes: '' })
-      useStoreId = newId
-      toast.success('新しい店舗を追加しました')
     }
     
     if (formData.quantity <= 0) {
@@ -93,21 +90,56 @@ export function ProductManagement() {
       return
     }
 
-    const payload = { ...formData, storeId: useStoreId }
+    // Resolve storeId from name; auto-add if not exists
+    let useStoreId = supabaseStores.find(s => s.name === trimmedStore)?.id || ''
+    if (!useStoreId) {
+      const newStore = await addSupabaseStore({ 
+        name: trimmedStore, 
+        location: '', 
+        notes: '' 
+      })
+      if (newStore) {
+        useStoreId = newStore.id!
+        toast.success('新しい店舗を追加しました')
+      } else {
+        toast.error('店舗の追加に失敗しました')
+        return
+      }
+    }
+
+    const payload = { 
+      storeId: useStoreId,
+      productType: formData.productType,
+      name: formData.name,
+      quantity: formData.quantity,
+      unit: formData.unit,
+      count: formData.count,
+      price: formData.price
+    }
 
     if (editingId) {
-      updateProduct(editingId, payload)
-      toast.success('商品情報を更新しました')
-      setEditingId(null)
+      const success = await updateSupabaseProduct(editingId, payload)
+      if (success) {
+        toast.success('商品情報を更新しました')
+        setEditingId(null)
+      } else {
+        toast.error('商品の更新に失敗しました')
+        return
+      }
     } else {
-      addProduct(payload)
-      toast.success('新しい商品を追加しました')
-      setIsAdding(false)
+      const success = await addSupabaseProduct(payload)
+      if (success) {
+        toast.success('新しい商品を追加しました')
+        setIsAdding(false)
+      } else {
+        toast.error('商品の追加に失敗しました')
+        return
+      }
     }
     
     setFormData({
       storeId: '',
-      productType: 'wrap',
+      productType: 'toilet_paper',
       name: '',
       quantity: 0,
       unit: 'm',
@@ -151,10 +183,14 @@ export function ProductManagement() {
     setStoreInput('')
   }
 
-  const handleRemove = (productId: string) => {
+  const handleRemove = async (productId: string) => {
     if (confirm('この商品を削除しますか？')) {
-      removeProduct(productId)
-      toast.success('商品を削除しました')
+      const success = await deleteSupabaseProduct(productId)
+      if (success) {
+        toast.success('商品を削除しました')
+      } else {
+        toast.error('商品の削除に失敗しました')
+      }
     }
   }
 
@@ -174,6 +210,41 @@ export function ProductManagement() {
   const calculateUnitPrice = (quantity: number, count: number, price: number) => {
     if (quantity <= 0 || price <= 0) return 0
     return Math.round((price / (quantity * count)) * 100) / 100
+  }
+
+  // Loading state
+  if (productsLoading) {
+    return (
+      <div className="card" id="product-management">
+        <div className="card-header">
+          <h2 className="card-title flex items-center text-primary-800">
+            <ShoppingBag className="w-6 h-6 mr-2" />
+            商品管理
+          </h2>
+        </div>
+        <div className="p-8 text-center">
+          <div className="loading-spinner mx-auto mb-4"></div>
+          <p>商品データを読み込み中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (productsError) {
+    return (
+      <div className="card" id="product-management">
+        <div className="card-header">
+          <h2 className="card-title flex items-center text-primary-800">
+            <ShoppingBag className="w-6 h-6 mr-2" />
+            商品管理
+          </h2>
+        </div>
+        <div className="p-8 text-center text-red-600">
+          <p>エラー: {productsError}</p>
+        </div>
+      </div>
+    )
   }
 
   // Note: Even if there are no stores yet, we allow product creation via free-text store name.
@@ -231,7 +302,7 @@ export function ProductManagement() {
                   required
                 />
                 <datalist id="stores-list">
-                  {stores.map(s => (
+                  {supabaseStores.map(s => (
                     <option key={s.id} value={s.name} />
                   ))}
                 </datalist>

@@ -162,10 +162,10 @@ export const useAppStore = create<AppState>()(
           // ユーザーが変わった場合、すべてのデータをクリア
           set({
             currentUserId: userId,
-            stores: [],
-            products: [],
+            legacyStores: [],
+            legacyProducts: [],
             currentProduct: defaultCurrentProduct,
-            productAddPrefill: {}
+            productAddPrefill: null
           })
         }
       },
@@ -220,7 +220,7 @@ export const useAppStore = create<AppState>()(
       // Utility methods (work with legacy data from Supabase)
       getProductsByType: (type: string) => {
         const { legacyProducts } = get()
-        return legacyProducts.filter((product) => product.type === type)
+        return legacyProducts.filter((product) => product.productType === type)
       },
 
       getCheapestProductByType: (type: string) => {
@@ -228,9 +228,11 @@ export const useAppStore = create<AppState>()(
         const products = getProductsByType(type)
         if (products.length === 0) return null
         
-        return products.reduce((cheapest, current) => 
-          current.unitPrice < cheapest.unitPrice ? current : cheapest
-        )
+        return products.reduce((cheapest, current) => {
+          const currentUnitPrice = current.quantity > 0 ? (current.price / (current.quantity * current.count)) : 0
+          const cheapestUnitPrice = cheapest.quantity > 0 ? (cheapest.price / (cheapest.quantity * cheapest.count)) : 0
+          return currentUnitPrice < cheapestUnitPrice ? current : cheapest
+        })
       },
 
       getComparisonResult: (): ComparisonResult | null => {
@@ -241,7 +243,7 @@ export const useAppStore = create<AppState>()(
         const cheapestProduct = getCheapestProductByType(currentProduct.type)
         if (!cheapestProduct) return null
         
-        const cheapestUnitPrice = cheapestProduct.unitPrice
+        const cheapestUnitPrice = cheapestProduct.quantity > 0 ? (cheapestProduct.price / (cheapestProduct.quantity * cheapestProduct.count)) : 0
         const store = legacyStores.find(s => s.id === cheapestProduct.storeId)
         
         const savings = cheapestUnitPrice - currentProduct.unitPrice
@@ -272,17 +274,7 @@ export const useAppStore = create<AppState>()(
         productAddPrefill: state.productAddPrefill
         // Note: legacyStores and legacyProducts are not persisted - they come from Supabase
       }),
-      // ユーザー切り替え時にストレージを再初期化
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          // 認証状態が変わった場合、ストレージキーを再確認
-          const currentKey = getUserStorageKey()
-          if (currentKey !== state.name) {
-            // ストレージキーが変わった場合、データをクリア
-            localStorage.removeItem(state.name || 'price-comparison-storage')
-          }
-        }
-      }
+      // Note: Storage key is dynamic based on user ID
     }
   )
 )
