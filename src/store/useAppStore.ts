@@ -1,8 +1,35 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { CurrentProduct, StoreData, ProductData, ProductTypeInfo, ComparisonResult } from '@/types'
 
+// ユーザーIDベースのストレージキーを生成
+const getUserStorageKey = () => {
+  if (typeof window === 'undefined') return 'price-comparison-storage'
+  
+  // AuthProviderのユーザー情報を取得
+  const authData = localStorage.getItem('sb-lkrndvcoyvvycyybuncp-auth-token')
+  if (authData) {
+    try {
+      const auth = JSON.parse(authData)
+      const userId = auth?.user?.id
+      if (userId) {
+        return `price-comparison-storage-${userId}`
+      }
+    } catch (error) {
+      console.warn('Failed to parse auth data:', error)
+    }
+  }
+  
+  // フォールバック: 匿名ユーザー用
+  return 'price-comparison-storage-anonymous'
+}
+
 interface AppState {
+  // User management
+  currentUserId: string | null
+  setCurrentUserId: (userId: string | null) => void
+  clearUserData: () => void
+
   // Current product being compared
   currentProduct: CurrentProduct
   setCurrentProduct: (product: Partial<CurrentProduct>) => void
@@ -135,6 +162,29 @@ const defaultProductTypes: ProductTypeInfo[] = [
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      // User management
+      currentUserId: null,
+      setCurrentUserId: (userId) => {
+        const { currentUserId } = get()
+        if (currentUserId !== userId) {
+          // ユーザーが変わった場合、すべてのデータをクリア
+          set({
+            currentUserId: userId,
+            stores: [],
+            products: [],
+            currentProduct: defaultCurrentProduct,
+            productAddPrefill: {}
+          })
+        }
+      },
+      clearUserData: () => set({
+        currentUserId: null,
+        stores: [],
+        products: [],
+        currentProduct: defaultCurrentProduct,
+        productAddPrefill: {}
+      }),
+
       // Current product
       currentProduct: defaultCurrentProduct,
       setCurrentProduct: (product) =>
@@ -264,13 +314,26 @@ export const useAppStore = create<AppState>()(
       }
     }),
     {
-      name: 'price-comparison-storage',
+      name: getUserStorageKey(),
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        currentUserId: state.currentUserId,
         stores: state.stores,
         products: state.products,
         currentProduct: state.currentProduct,
         productAddPrefill: state.productAddPrefill
-      })
+      }),
+      // ユーザー切り替え時にストレージを再初期化
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // 認証状態が変わった場合、ストレージキーを再確認
+          const currentKey = getUserStorageKey()
+          if (currentKey !== state.name) {
+            // ストレージキーが変わった場合、データをクリア
+            localStorage.removeItem(state.name || 'price-comparison-storage')
+          }
+        }
+      }
     }
   )
 )
