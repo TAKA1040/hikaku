@@ -5,7 +5,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import { AuthUser } from '@/types'
 import { SupabaseClient, User } from '@supabase/supabase-js'
 import { useAppStore } from '@/store/useAppStore'
-// import { SupabaseDataProvider } from './SupabaseDataProvider'
+import { SupabaseDataProvider } from './SupabaseDataProvider'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -96,10 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Temporarily disabled SupabaseDataProvider until database is set up */}
-      {/* <SupabaseDataProvider> */}
+      <SupabaseDataProvider>
         {children}
-      {/* </SupabaseDataProvider> */}
+      </SupabaseDataProvider>
     </AuthContext.Provider>
   )
 }

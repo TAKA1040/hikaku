@@ -8,6 +8,7 @@ import { CurrentProductForm } from '@/components/dashboard/CurrentProductForm'
 import { ComparisonResult } from '@/components/dashboard/ComparisonResult'
 import { StoreManagement } from '@/components/dashboard/StoreManagement'
 import { ProductManagement } from '@/components/dashboard/ProductManagement'
+import Link from 'next/link'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -59,19 +60,25 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-3 text-sm text-blue-700">
               <div className="space-y-2">
                 <div className="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center mx-auto">1</div>
-                <p><strong>店舗を追加</strong></p>
-                <p>よく行く店舗を登録します</p>
+                <p><strong>店舗を追加（任意）</strong></p>
+                <p>必要に応じて、よく行く店舗を登録します</p>
               </div>
               <div className="space-y-2">
                 <div className="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center mx-auto">2</div>
-                <p><strong>商品を登録</strong></p>
-                <p>いつも買う商品の価格を登録</p>
+                <p><strong>商品を登録（任意）</strong></p>
+                <p>よく買う商品の価格を登録（未登録店舗はここで入力しても登録可能）</p>
               </div>
               <div className="space-y-2">
                 <div className="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center mx-auto">3</div>
                 <p><strong>価格を比較</strong></p>
-                <p>店頭で商品情報を入力して比較</p>
+                <p>店頭で商品情報を入力して比較（登録なしでもOK）</p>
               </div>
+            </div>
+            <p className="text-xs text-blue-600">ツールの利用にはログインが必要です。ネット接続は初回ログインに必要で、ログイン済みならオフラインでも比較・ローカル保存が可能です（サーバー同期は現在未対応）。</p>
+            <div className="pt-2">
+              <Link href="/guide" className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                詳しい使い方を見る
+              </Link>
             </div>
           </div>
         </div>

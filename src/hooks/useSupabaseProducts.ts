@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseClient } from '@/lib/supabase'
 import { ProductData } from '@/types'
 
 export function useSupabaseProducts() {
@@ -11,10 +11,7 @@ export function useSupabaseProducts() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseClient()
 
   // 商品一覧を取得（店舗情報も含む）
   const fetchProducts = useCallback(async () => {
@@ -42,7 +39,18 @@ export function useSupabaseProducts() {
       if (error) throw error
 
       // データ変換（ProductData形式に合わせる）
-      const transformedProducts: ProductData[] = (data || []).map(item => ({
+      interface SupabaseProduct {
+        id: string
+        store_id: string
+        product_type: string
+        name: string | null
+        quantity: number
+        count: number
+        price: number
+        unit: string | null
+      }
+      
+      const transformedProducts: ProductData[] = (data || []).map((item: SupabaseProduct) => ({
         id: item.id,
         storeId: item.store_id,
         productType: item.product_type,

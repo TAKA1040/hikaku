@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useAppStore, availableUnits } from '@/store/useAppStore'
+import { useSupabaseProducts } from '@/hooks/useSupabaseProducts'
+import { useSupabaseStores } from '@/hooks/useSupabaseStores'
 import { ShoppingBag, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -20,16 +22,23 @@ export function ProductManagement() {
     stores,
     products,
     productTypes, 
-    addProduct, 
-    updateProduct, 
-    removeProduct,
-    addStore,
     productAddPrefill,
     setProductAddPrefill,
+    setProducts,
+    setStores,
   } = useAppStore()
-  
-  const productsLoading = false
-  const productsError = null
+
+  // Use Supabase hooks for DB-backed CRUD
+  const {
+    loading: productsLoading,
+    error: productsError,
+    addProduct: addProductDb,
+    updateProduct: updateProductDb,
+    deleteProduct: deleteProductDb,
+    products: supabaseProducts,
+  } = useSupabaseProducts()
+
+  const { addStore: addStoreDb, stores: supabaseStores } = useSupabaseStores()
   
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -43,6 +52,15 @@ export function ProductManagement() {
     count: 1,
     price: 0
   })
+
+  // Supabaseから取得したデータをローカル状態に同期
+  useEffect(() => {
+    setProducts(supabaseProducts)
+  }, [supabaseProducts, setProducts])
+
+  useEffect(() => {
+    setStores(supabaseStores)
+  }, [supabaseStores, setStores])
 
   // When a variant is sent from CurrentProductForm, prefill and open the form
   useEffect(() => {
@@ -68,7 +86,7 @@ export function ProductManagement() {
     setProductAddPrefill(null)
   }, [productAddPrefill, productTypes, setProductAddPrefill])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmedStore = storeInput.trim()
     if (!trimmedStore) {
@@ -86,12 +104,15 @@ export function ProductManagement() {
       return
     }
 
-    // Resolve storeId from name; auto-add if not exists
+    // Resolve storeId from name; auto-add in DB if not exists
     let useStoreId = stores.find(s => s.name === trimmedStore)?.id || ''
     if (!useStoreId) {
-      const newId = crypto.randomUUID()
-      addStore({ id: newId, name: trimmedStore, location: '', notes: '' })
-      useStoreId = newId
+      const created = await addStoreDb({ name: trimmedStore, location: '', notes: '' })
+      if (!created?.id) {
+        toast.error('店舗の追加に失敗しました')
+        return
+      }
+      useStoreId = created.id
       toast.success('新しい店舗を追加しました')
     }
 
@@ -106,13 +127,23 @@ export function ProductManagement() {
     }
 
     if (editingId) {
-      updateProduct(editingId, payload)
-      toast.success('商品情報を更新しました')
-      setEditingId(null)
+      const updated = await updateProductDb(editingId, payload)
+      if (updated) {
+        toast.success('商品情報を更新しました')
+        setEditingId(null)
+      } else {
+        toast.error('商品情報の更新に失敗しました')
+        return
+      }
     } else {
-      addProduct(payload)
-      toast.success('新しい商品を追加しました')
-      setIsAdding(false)
+      const created = await addProductDb(payload)
+      if (created) {
+        toast.success('新しい商品を追加しました')
+        setIsAdding(false)
+      } else {
+        toast.error('商品の追加に失敗しました')
+        return
+      }
     }
     
     setFormData({
@@ -161,10 +192,14 @@ export function ProductManagement() {
     setStoreInput('')
   }
 
-  const handleRemove = (productId: string) => {
+  const handleRemove = async (productId: string) => {
     if (confirm('この商品を削除しますか？')) {
-      removeProduct(productId)
-      toast.success('商品を削除しました')
+      const ok = await deleteProductDb(productId)
+      if (ok) {
+        toast.success('商品を削除しました')
+      } else {
+        toast.error('商品の削除に失敗しました')
+      }
     }
   }
 
@@ -487,16 +522,16 @@ export function ProductManagement() {
                   
                   <div className="flex items-center gap-2 ml-4">
                     <button
-                      onClick={() => handleEdit(product.id!)}
-                      disabled={isAdding || editingId !== null}
+                      onClick={() => product.id && handleEdit(product.id)}
+                      disabled={isAdding || editingId !== null || !product.id}
                       className="btn btn-ghost p-2"
                       aria-label="編集"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleRemove(product.id!)}
-                      disabled={isAdding || editingId !== null}
+                      onClick={() => product.id && handleRemove(product.id)}
+                      disabled={isAdding || editingId !== null || !product.id}
                       className="btn btn-ghost p-2 text-red-600 hover:text-red-700"
                       aria-label="削除"
                     >

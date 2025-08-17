@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/useAppStore'
+import { useSupabaseStores } from '@/hooks/useSupabaseStores'
 import { Store, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -12,9 +13,8 @@ interface StoreFormData {
 }
 
 export function StoreManagement() {
-  const { stores, addStore, updateStore, removeStore } = useAppStore()
-  const loading = false
-  const error = null
+  const { stores, setStores } = useAppStore()
+  const { addStore, updateStore, deleteStore, loading, error, stores: supabaseStores } = useSupabaseStores()
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<StoreFormData>({
@@ -23,7 +23,12 @@ export function StoreManagement() {
     notes: ''
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Supabaseから取得したデータをローカル状態に同期
+  useEffect(() => {
+    setStores(supabaseStores)
+  }, [supabaseStores, setStores])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!formData.name.trim()) {
@@ -32,15 +37,23 @@ export function StoreManagement() {
     }
 
     if (editingId) {
-      updateStore(editingId, formData)
-      toast.success('店舗情報を更新しました')
-      setEditingId(null)
-      setFormData({ name: '', location: '', notes: '' })
+      const updated = await updateStore(editingId, formData)
+      if (updated) {
+        toast.success('店舗情報を更新しました')
+        setEditingId(null)
+        setFormData({ name: '', location: '', notes: '' })
+      } else {
+        toast.error('店舗情報の更新に失敗しました')
+      }
     } else {
-      addStore(formData)
-      toast.success('新しい店舗を追加しました')
-      setIsAdding(false)
-      setFormData({ name: '', location: '', notes: '' })
+      const created = await addStore(formData)
+      if (created) {
+        toast.success('新しい店舗を追加しました')
+        setIsAdding(false)
+        setFormData({ name: '', location: '', notes: '' })
+      } else {
+        toast.error('店舗の追加に失敗しました')
+      }
     }
   }
 
@@ -63,10 +76,14 @@ export function StoreManagement() {
     setFormData({ name: '', location: '', notes: '' })
   }
 
-  const handleRemove = (storeId: string) => {
+  const handleRemove = async (storeId: string) => {
     if (confirm('この店舗を削除しますか？登録された商品も同時に削除されます。')) {
-      removeStore(storeId)
-      toast.success('店舗を削除しました')
+      const ok = await deleteStore(storeId)
+      if (ok) {
+        toast.success('店舗を削除しました')
+      } else {
+        toast.error('店舗の削除に失敗しました')
+      }
     }
   }
 
@@ -221,16 +238,16 @@ export function StoreManagement() {
                 
                 <div className="flex items-center gap-2 ml-4">
                   <button
-                    onClick={() => handleEdit(store.id!)}
-                    disabled={isAdding || editingId !== null}
+                    onClick={() => store.id && handleEdit(store.id)}
+                    disabled={isAdding || editingId !== null || !store.id}
                     className="btn btn-ghost p-2"
                     aria-label="編集"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleRemove(store.id!)}
-                    disabled={isAdding || editingId !== null}
+                    onClick={() => store.id && handleRemove(store.id)}
+                    disabled={isAdding || editingId !== null || !store.id}
                     className="btn btn-ghost p-2 text-danger-600 hover:text-danger-700"
                     aria-label="削除"
                   >

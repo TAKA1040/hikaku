@@ -2,27 +2,20 @@
 
 import { useEffect } from 'react'
 import { useAuth } from './AuthProvider'
-import { useSupabaseStores } from '@/hooks/useSupabaseStores'
-import { useSupabaseProducts } from '@/hooks/useSupabaseProducts'
 import { useAppStore } from '@/store/useAppStore'
 
 export function SupabaseDataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
-  const { stores } = useSupabaseStores()
-  const { products } = useSupabaseProducts()
-  const { setLegacyStores, setLegacyProducts } = useAppStore()
+  const { setCurrentUserId, clearUserData } = useAppStore()
 
-  // Supabaseから取得したデータをlegacyストアに同期
+  // ユーザー状態の変更に応じてstoreを初期化
   useEffect(() => {
     if (user) {
-      setLegacyStores(stores)
-      setLegacyProducts(products)
+      setCurrentUserId(user.id)
     } else {
-      // ユーザーがログアウトした場合はクリア
-      setLegacyStores([])
-      setLegacyProducts([])
+      clearUserData()
     }
-  }, [user, stores, products, setLegacyStores, setLegacyProducts])
+  }, [user, setCurrentUserId, clearUserData])
 
   return <>{children}</>
 }

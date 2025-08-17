@@ -1,28 +1,5 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import { CurrentProduct, StoreData, ProductData, ProductTypeInfo, ComparisonResult } from '@/types'
-
-// ユーザーIDベースのストレージキーを生成
-const getUserStorageKey = () => {
-  if (typeof window === 'undefined') return 'price-comparison-storage'
-  
-  // AuthProviderのユーザー情報を取得
-  const authData = localStorage.getItem('sb-lkrndvcoyvvycyybuncp-auth-token')
-  if (authData) {
-    try {
-      const auth = JSON.parse(authData)
-      const userId = auth?.user?.id
-      if (userId) {
-        return `price-comparison-storage-${userId}`
-      }
-    } catch (error) {
-      console.warn('Failed to parse auth data:', error)
-    }
-  }
-  
-  // フォールバック: 匿名ユーザー用
-  return 'price-comparison-storage-anonymous'
-}
 
 interface AppState {
   // User management
@@ -163,69 +140,35 @@ const defaultProductTypes: ProductTypeInfo[] = [
   }
 ]
 
-export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      // User management
-      currentUserId: null,
-      setCurrentUserId: (userId) => {
-        const { currentUserId, stores, products } = get()
-        if (currentUserId !== userId) {
-          // ユーザーが変わった場合、すべてのデータをクリア
-          const newState: Partial<AppState> = {
-            currentUserId: userId,
-            stores: [],
-            products: [],
-            legacyStores: [],
-            legacyProducts: [],
-            currentProduct: defaultCurrentProduct,
-            productAddPrefill: null
-          }
-          
-          // 新しいユーザーの場合、サンプルデータを追加
-          if (userId && stores.length === 0 && products.length === 0) {
-            const sampleStores: StoreData[] = [
-              { id: crypto.randomUUID(), name: 'イオン○○店', location: '', notes: '' },
-              { id: crypto.randomUUID(), name: 'ドンキホーテ○○店', location: '', notes: '' }
-            ]
-            const sampleProducts: ProductData[] = [
-              {
-                id: crypto.randomUUID(),
-                storeId: sampleStores[0].id!,
-                productType: 'toilet_paper',
-                name: 'エリエール 12ロール',
-                quantity: 50,
-                unit: 'm',
-                count: 12,
-                price: 480
-              },
-              {
-                id: crypto.randomUUID(),
-                storeId: sampleStores[1].id!,
-                productType: 'toilet_paper',
-                name: 'ネピア 6ロール',
-                quantity: 30,
-                unit: 'm',
-                count: 6,
-                price: 298
-              }
-            ]
-            newState.stores = sampleStores
-            newState.products = sampleProducts
-          }
-          
-          set(newState)
-        }
-      },
-      clearUserData: () => set({
-        currentUserId: null,
+export const useAppStore = create<AppState>()((set, get) => ({
+  // User management
+  currentUserId: null,
+  setCurrentUserId: (userId) => {
+    const { currentUserId } = get()
+    if (currentUserId !== userId) {
+      // ユーザーが変わった場合、すべてのデータをクリア
+      const newState: Partial<AppState> = {
+        currentUserId: userId,
         stores: [],
         products: [],
         legacyStores: [],
         legacyProducts: [],
         currentProduct: defaultCurrentProduct,
         productAddPrefill: null
-      }),
+      }
+      
+      set(newState)
+    }
+  },
+  clearUserData: () => set({
+    currentUserId: null,
+    stores: [],
+    products: [],
+    legacyStores: [],
+    legacyProducts: [],
+    currentProduct: defaultCurrentProduct,
+    productAddPrefill: null
+  }),
 
       // Current product
       currentProduct: defaultCurrentProduct,
@@ -343,19 +286,4 @@ export const useAppStore = create<AppState>()(
           isCurrentCheaper: savings >= 0
         }
       }
-    }),
-    {
-      name: getUserStorageKey(),
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        currentUserId: state.currentUserId,
-        currentProduct: state.currentProduct,
-        productAddPrefill: state.productAddPrefill,
-        stores: state.stores,
-        products: state.products
-        // Note: legacyStores and legacyProducts are not persisted - they come from Supabase
-      }),
-      // Note: Storage key is dynamic based on user ID
-    }
-  )
-)
+    }))

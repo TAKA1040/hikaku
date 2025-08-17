@@ -5,6 +5,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { ShoppingCart, LogOut, Settings, Menu, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export function Header() {
   const { user, signOut } = useAuth()
@@ -52,6 +53,13 @@ export function Header() {
                 </span>
               </div>
             )}
+            <Link
+              href="/guide"
+              className="btn btn-ghost p-2"
+              aria-label="使い方"
+            >
+              使い方
+            </Link>
             <button
               onClick={() => toast('設定機能は準備中です')}
               className="btn btn-ghost p-2"
@@ -107,6 +115,13 @@ export function Header() {
                   </div>
                 </div>
               )}
+              <Link
+                href="/guide"
+                onClick={() => setIsMenuOpen(false)}
+                className="w-full flex items-center space-x-3 px-2 py-3 text-left hover:bg-gray-50 rounded-md"
+              >
+                <span className="text-gray-700">使い方</span>
+              </Link>
               <button
                 onClick={() => {
                   toast('設定機能は準備中です')

@@ -2,9 +2,12 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-// Read environment variables manually
-const supabaseUrl = 'https://lkrndvcoyvvycyybuncp.supabase.co';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrcm5kdmNveXZ2eWN5eWJ1bmNwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTIxODAyNiwiZXhwIjoyMDcwNzk0MDI2fQ.HO1cGiaqCzjs8JQrv4hEa-wDv7euCQpca7I3uKAVOqs';
+// Load environment variables from .env.local file
+require('dotenv').config({ path: '.env.local' });
+
+// Read environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing required environment variables');

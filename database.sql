@@ -56,6 +56,7 @@ CREATE TABLE public.products (
     product_type text REFERENCES public.product_types(value) NOT NULL,
     name text,
     quantity numeric NOT NULL CHECK (quantity > 0),
+    unit text NOT NULL DEFAULT 'm',
     count numeric NOT NULL DEFAULT 1 CHECK (count > 0),
     price numeric NOT NULL CHECK (price > 0),
     unit_price numeric GENERATED ALWAYS AS (price / (quantity * count)) STORED,
@@ -111,12 +112,32 @@ CREATE POLICY "Users can insert own profile" ON public.profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Stores policies
-CREATE POLICY "Users can manage own stores" ON public.stores
-    FOR ALL USING (auth.uid() = user_id);
+-- Explicit policies per action so INSERT works under RLS
+CREATE POLICY "stores_select_own" ON public.stores
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "stores_insert_own" ON public.stores
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "stores_update_own" ON public.stores
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "stores_delete_own" ON public.stores
+    FOR DELETE USING (auth.uid() = user_id);
 
 -- Products policies
-CREATE POLICY "Users can manage own products" ON public.products
-    FOR ALL USING (auth.uid() = user_id);
+-- Explicit policies per action so INSERT works under RLS
+CREATE POLICY "products_select_own" ON public.products
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "products_insert_own" ON public.products
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "products_update_own" ON public.products
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "products_delete_own" ON public.products
+    FOR DELETE USING (auth.uid() = user_id);
 
 -- Price comparisons policies
 CREATE POLICY "Users can manage own comparisons" ON public.price_comparisons

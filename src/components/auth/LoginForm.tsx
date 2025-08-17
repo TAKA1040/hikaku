@@ -26,7 +26,7 @@ export function LoginForm() {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">価格比較ツール</h1>
         <p className="text-gray-600">
-          Googleアカウントでログインして、価格比較を始めましょう
+          本ツールの利用にはログインが必要です。Googleアカウントでログインして開始してください。
         </p>
       </div>
 
@@ -45,6 +45,10 @@ export function LoginForm() {
             {loading ? 'ログイン中...' : 'Googleでログイン'}
           </span>
         </button>
+      </div>
+
+      <div className="text-xs text-gray-500 text-center">
+        <p>ネット接続は初回ログインに必要です。ログイン済みなら、オフラインでも比較とローカル保存が可能です（サーバー同期は現在未対応）。</p>
       </div>
 
       <div className="text-center text-sm text-gray-500">
