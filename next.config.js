@@ -9,8 +9,8 @@ const nextConfig = {
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
-      // Scripts/styles: avoid 'unsafe-inline' for scripts; allow inline styles for Tailwind JIT if needed
-      "script-src 'self'",
+      // Scripts/styles: allow specific hashes for Next.js inline scripts
+      "script-src 'self' 'sha256-Q+8tPsjVtiDsjF/Cv8FMOpg2Yg91oKFKDAJat1PPb2g=' 'sha256-6Tz3JVhQOhRJcz++zOuTr5ig5FKA5h6lvKa1VoP6awk=' 'sha256-F/+BKFqpWzyI4HZ2vm7xohyhK1KFfw86q1yUyDTESQ4=' 'sha256-tGGqBWl3liI+Q823DwOdS8adMXw3up/ZpEzxFYIrzKY=' 'sha256-VeHv/xWUJQ3bL/OrluKV1dp60wy9JB8heF94CQp3jo0='",
       "style-src 'self' 'unsafe-inline'",
       // Images: self, data URIs, Google avatars
       "img-src 'self' data: https://lh3.googleusercontent.com",
