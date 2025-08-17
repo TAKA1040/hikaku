@@ -154,27 +154,6 @@ export default function GuidePage() {
           </div>
         </section>
 
-        {/* Troubleshooting & Requirements */}
-        <section className="card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">トラブルシューティング / 動作要件</h2>
-          <div className="grid gap-3 md:gap-4 md:grid-cols-2">
-            <div className="p-4 rounded-lg bg-white border">
-              <p className="font-medium mb-2">トラブルシューティング</p>
-              <ul className="list-disc pl-5 space-y-1 text-base sm:text-sm text-gray-700">
-                <li>単価が出ない → 容量・価格の入力を確認</li>
-                <li>比較が出ない → 同種別で単価計算済みの商品が必要</li>
-                <li>小数表示 → 小数2桁で丸めて表示</li>
-              </ul>
-            </div>
-            <div className="p-4 rounded-lg bg-white border">
-              <p className="font-medium mb-2">動作要件</p>
-              <ul className="list-disc pl-5 space-y-1 text-base sm:text-sm text-gray-700">
-                <li>推奨ブラウザ: 最新版の Chrome / Edge / Safari</li>
-                <li>ネット接続: 初回ログインに必要。ログイン済みならオフラインでも比較・ローカル保存が可能</li>
-              </ul>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   )
