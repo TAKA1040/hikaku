@@ -150,19 +150,6 @@ export function CurrentProductForm() {
       </div>
       
       <div className="card-content space-y-6">
-        <style>{`
-          @media (min-width: 768px) {
-            input.with-spinner[type="number"] {
-              appearance: auto;
-              -moz-appearance: auto;
-            }
-            input.with-spinner[type="number"]::-webkit-outer-spin-button,
-            input.with-spinner[type="number"]::-webkit-inner-spin-button {
-              -webkit-appearance: auto;
-              margin: 0;
-            }
-          }
-        `}</style>
         {/* Product Type and Name */}
         <div className="form-grid">
           <div>
@@ -256,10 +243,9 @@ export function CurrentProductForm() {
                         value={v.quantity || ''}
                         onChange={(e) => updateVariant(idx, 'quantity', e.target.value)}
                         placeholder="例: 30"
-                        className="input-field w-full hidden md:block with-spinner"
+                        className="input-field w-full hidden md:block [appearance:auto] [-moz-appearance:auto]"
                         step={1}
                         min={1}
-                        style={{ appearance: 'auto' as React.CSSProperties['appearance'] }}
                       />
                       {/* Mobile */}
                       <input
@@ -294,10 +280,9 @@ export function CurrentProductForm() {
                       value={v.count || ''}
                       onChange={(e) => updateVariant(idx, 'count', e.target.value)}
                       placeholder="例: 2"
-                      className="input-field w-full hidden md:block with-spinner"
+                      className="input-field w-full hidden md:block [appearance:auto] [-moz-appearance:auto]"
                       step={1}
                       min={1}
-                      style={{ appearance: 'auto' as React.CSSProperties['appearance'] }}
                     />
                     {/* Mobile */}
                     <input

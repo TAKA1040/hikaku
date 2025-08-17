@@ -278,19 +278,6 @@ export function ProductManagement() {
       </div>
 
       <div className="card-content space-y-4">
-        <style>{`
-          @media (min-width: 768px) {
-            input.with-spinner[type="number"] {
-              appearance: auto;
-              -moz-appearance: auto;
-            }
-            input.with-spinner[type="number"]::-webkit-outer-spin-button,
-            input.with-spinner[type="number"]::-webkit-inner-spin-button {
-              -webkit-appearance: auto;
-              margin: 0;
-            }
-          }
-        `}</style>
         {/* Add/Edit Form */}
         {(isAdding || editingId) && (
           <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg space-y-4">
@@ -366,10 +353,9 @@ export function ProductManagement() {
                       onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value, 10) || 0 }))}
                       onFocus={(e) => e.target.select()}
                       placeholder="数量"
-                      className="input-field w-full hidden md:block with-spinner"
+                      className="input-field w-full hidden md:block [appearance:auto] [-moz-appearance:auto]"
                       step={1}
                       min={1}
-                      style={{ appearance: 'auto' as React.CSSProperties['appearance'] }}
                     />
                     {/* Mobile: text input to ensure numeric keypad */}
                     <input
@@ -410,10 +396,9 @@ export function ProductManagement() {
                     onChange={(e) => setFormData(prev => ({ ...prev, count: parseInt(e.target.value, 10) || 1 }))}
                     onFocus={(e) => e.target.select()}
                     placeholder="入り数"
-                    className="input-field w-full hidden md:block with-spinner"
+                    className="input-field w-full hidden md:block [appearance:auto] [-moz-appearance:auto]"
                     step={1}
                     min={1}
-                    style={{ appearance: 'auto' as React.CSSProperties['appearance'] }}
                   />
                   {/* Mobile: text input to ensure numeric keypad */}
                   <input
