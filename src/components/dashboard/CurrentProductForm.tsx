@@ -221,102 +221,150 @@ export function CurrentProductForm() {
           <div className="space-y-2">
             {variants.map((v, idx) => (
               <div key={v.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end bg-white/40 rounded-md p-3 border border-gray-200">
-                {/* 選択 */}
-                <div className="flex items-center gap-2 md:col-span-1">
+                {/* Desktop selection */}
+                <div className="hidden md:flex items-center gap-2 md:col-span-1">
                   <input
                     type="radio"
                     name="variantSelect"
                     checked={selectedVariantId === v.id}
                     onChange={() => selectVariant(v.id)}
                   />
-                  <span className="text-xs text-gray-500 md:hidden">選択</span>
                 </div>
 
-                {/* 単位（数量+単位選択） */}
-                <div className="md:col-span-5">
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2 md:block">単位</label>
-                  <div className="flex gap-2">
-                    <div className="flex-1 min-w-0">
-                      {/* Desktop */}
+                {/* Mobile 2-row layout */}
+                <div className="md:hidden col-span-1 space-y-3">
+                  {/* Row 1: 選択 + 単位入力 */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2">
                       <input
-                        type="number"
-                        value={v.quantity || ''}
-                        onChange={(e) => updateVariant(idx, 'quantity', e.target.value)}
-                        placeholder="例: 30"
-                        className="input-field w-full hidden md:block [appearance:auto] [-moz-appearance:auto]"
-                        step={1}
-                        min={1}
+                        type="radio"
+                        name="variantSelect"
+                        checked={selectedVariantId === v.id}
+                        onChange={() => selectVariant(v.id)}
                       />
-                      {/* Mobile */}
+                      <span className="text-xs text-gray-500">選択</span>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">単位</label>
+                      <div className="flex gap-1">
+                        <input
+                          type="text"
+                          value={v.quantity || ''}
+                          onChange={(e) => updateVariant(idx, 'quantity', e.target.value)}
+                          placeholder="30"
+                          className="input-field flex-1"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                        />
+                        <select
+                          value={v.unit}
+                          onChange={(e) => updateVariant(idx, 'unit', e.target.value)}
+                          className="input-field flex-1"
+                        >
+                          {allowedUnits.map(u => (
+                            <option key={u.value} value={u.value}>{u.value}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Row 2: 入り数 + 価格 + 単価 */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">入り数</label>
                       <input
                         type="text"
-                        value={v.quantity || ''}
-                        onChange={(e) => updateVariant(idx, 'quantity', e.target.value)}
-                        placeholder="例: 30"
-                        className="input-field w-full md:hidden"
+                        value={v.count || ''}
+                        onChange={(e) => updateVariant(idx, 'count', e.target.value)}
+                        placeholder="2"
+                        className="input-field w-full"
                         inputMode="numeric"
                         pattern="[0-9]*"
                       />
                     </div>
-                    <select
-                      value={v.unit}
-                      onChange={(e) => updateVariant(idx, 'unit', e.target.value)}
-                      className="input-field flex-1 min-w-0"
-                    >
-                      {allowedUnits.map(u => (
-                        <option key={u.value} value={u.value}>{u.value}</option>
-                      ))}
-                    </select>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">価格</label>
+                      <input
+                        type="text"
+                        value={v.price || ''}
+                        onChange={(e) => updateVariant(idx, 'price', e.target.value)}
+                        placeholder="価格"
+                        className="input-field font-semibold"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">単価</label>
+                      <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border min-h-[2.5rem] flex items-center">
+                        {calcUnitPrice(v.quantity, v.count, v.price) > 0 ? `${calcUnitPrice(v.quantity, v.count, v.price).toFixed(2)}円/${v.unit}` : '-'}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* 入り数 */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">入り数</label>
-                  <div>
-                    {/* Desktop */}
+                {/* Desktop layout */}
+                <div className="hidden md:contents">
+                  {/* 単位（数量+単位選択） */}
+                  <div className="md:col-span-5">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">単位</label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="number"
+                          value={v.quantity || ''}
+                          onChange={(e) => updateVariant(idx, 'quantity', e.target.value)}
+                          placeholder="例: 30"
+                          className="input-field w-full [appearance:auto] [-moz-appearance:auto]"
+                          step={1}
+                          min={1}
+                        />
+                      </div>
+                      <select
+                        value={v.unit}
+                        onChange={(e) => updateVariant(idx, 'unit', e.target.value)}
+                        className="input-field flex-1 min-w-0"
+                      >
+                        {allowedUnits.map(u => (
+                          <option key={u.value} value={u.value}>{u.value}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* 入り数 */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">入り数</label>
                     <input
                       type="number"
                       value={v.count || ''}
                       onChange={(e) => updateVariant(idx, 'count', e.target.value)}
                       placeholder="例: 2"
-                      className="input-field w-full hidden md:block [appearance:auto] [-moz-appearance:auto]"
+                      className="input-field w-full [appearance:auto] [-moz-appearance:auto]"
                       step={1}
                       min={1}
                     />
-                    {/* Mobile */}
+                  </div>
+
+                  {/* 価格 */}
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">価格 (円)</label>
                     <input
                       type="text"
-                      value={v.count || ''}
-                      onChange={(e) => updateVariant(idx, 'count', e.target.value)}
-                      placeholder="例: 2"
-                      className="input-field w-full md:hidden"
+                      value={v.price || ''}
+                      onChange={(e) => updateVariant(idx, 'price', e.target.value)}
+                      placeholder="価格"
+                      className="input-field font-semibold"
                       inputMode="numeric"
                       pattern="[0-9]*"
                     />
                   </div>
-                </div>
 
-                {/* 価格 */}
-                <div className="md:col-span-3">
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">価格 (円)</label>
-                  <input
-                    type="text"
-                    value={v.price || ''}
-                    onChange={(e) => updateVariant(idx, 'price', e.target.value)}
-                    placeholder="価格"
-                    className="input-field font-semibold"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                  />
-                </div>
-
-                {/* 単価表示 */}
-                <div className="md:col-span-1 md:text-right text-sm text-gray-600">
-                  <div className="md:block">
+                  {/* 単価表示 */}
+                  <div className="md:col-span-1 text-right text-sm text-gray-600">
                     {calcUnitPrice(v.quantity, v.count, v.price) > 0 ? `${calcUnitPrice(v.quantity, v.count, v.price).toFixed(2)}円/${v.unit}` : '-'}
                   </div>
-                  <div className="text-xs text-gray-400 md:hidden">単価</div>
                 </div>
               </div>
             ))}

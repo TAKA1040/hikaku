@@ -24,8 +24,8 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">価格比較ツール</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-balance">価格比較ツール</h1>
+        <p className="text-gray-600 text-base sm:text-sm">
           本ツールの利用にはログインが必要です。Googleアカウントでログインして開始してください。
         </p>
       </div>
@@ -47,13 +47,13 @@ export function LoginForm() {
         </button>
       </div>
 
-      <div className="text-xs text-gray-500 text-center">
+      <div className="text-sm sm:text-xs text-gray-500 text-center">
         <p>ネット接続は初回ログインに必要です。ログイン済みなら、オフラインでも比較とローカル保存が可能です（サーバー同期は現在未対応）。</p>
       </div>
 
       <div className="text-center text-sm text-gray-500">
         <p>ログインすることで、以下に同意したものとみなされます：</p>
-        <div className="mt-2 space-x-4">
+        <div className="mt-2 flex flex-col sm:flex-row gap-2 sm:gap-4 items-center justify-center">
           <button className="text-primary-600 hover:text-primary-700 underline">
             利用規約
           </button>

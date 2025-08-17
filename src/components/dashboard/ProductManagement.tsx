@@ -338,34 +338,23 @@ export function ProductManagement() {
               </div>
             </div>
             
-            <div className="form-grid">
+            {/* Mobile 2-row layout */}
+            <div className="md:hidden space-y-3">
+              {/* Row 1: 単位入力 */}
               <div>
-                <label htmlFor="product-quantity-form" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="product-quantity-form-mobile" className="block text-sm font-medium text-gray-700 mb-2">
                   単位 *
                 </label>
                 <div className="flex gap-2">
-                  <div className="flex-1 min-w-0">
-                    {/* Desktop: native number input with spinner */}
+                  <div className="flex-1">
                     <input
-                      id="product-quantity-form"
-                      type="number"
-                      value={formData.quantity || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value, 10) || 0 }))}
-                      onFocus={(e) => e.target.select()}
-                      placeholder="数量"
-                      className="input-field w-full hidden md:block [appearance:auto] [-moz-appearance:auto]"
-                      step={1}
-                      min={1}
-                    />
-                    {/* Mobile: text input to ensure numeric keypad */}
-                    <input
-                      id="product-quantity-form-text"
+                      id="product-quantity-form-mobile"
                       type="text"
                       value={formData.quantity || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value, 10) || 0 }))}
                       onFocus={(e) => e.target.select()}
                       placeholder="数量"
-                      className="input-field w-full md:hidden"
+                      className="input-field w-full"
                       inputMode="numeric"
                       pattern="[0-9]*"
                     />
@@ -373,7 +362,7 @@ export function ProductManagement() {
                   <select
                     value={formData.unit}
                     onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
-                    className="input-field flex-1 min-w-0"
+                    className="input-field flex-1"
                   >
                     {getAllowedUnits(formData.productType).map(unit => (
                       <option key={unit.value} value={unit.value}>
@@ -383,12 +372,93 @@ export function ProductManagement() {
                   </select>
                 </div>
               </div>
-              <div>
-                <label htmlFor="product-count-form" className="block text-sm font-medium text-gray-700 mb-2">
-                  入り数 *
-                </label>
+              
+              {/* Row 2: 入り数 + 価格 + 単価プレビュー */}
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  {/* Desktop: native number input with spinner */}
+                  <label htmlFor="product-count-form-mobile" className="block text-xs font-medium text-gray-700 mb-1">
+                    入り数 *
+                  </label>
+                  <input
+                    id="product-count-form-mobile"
+                    type="text"
+                    value={formData.count || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, count: parseInt(e.target.value, 10) || 1 }))}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="入り数"
+                    className="input-field w-full"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="product-price-form-mobile" className="block text-xs font-medium text-gray-700 mb-1">
+                    価格 (円) *
+                  </label>
+                  <input
+                    id="product-price-form-mobile"
+                    type="text"
+                    value={formData.price || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value, 10) || 0 }))}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="価格"
+                    className="input-field"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">単価</label>
+                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border min-h-[2.5rem] flex items-center">
+                    {formData.quantity > 0 && formData.price > 0 
+                      ? `${calculateUnitPrice(formData.quantity, formData.count, formData.price).toFixed(2)}円/${formData.unit}`
+                      : '-'
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop layout */}
+            <div className="hidden md:block">
+              <div className="form-grid">
+                <div>
+                  <label htmlFor="product-quantity-form" className="block text-sm font-medium text-gray-700 mb-2">
+                    単位 *
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 min-w-0">
+                      <input
+                        id="product-quantity-form"
+                        type="number"
+                        value={formData.quantity || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value, 10) || 0 }))}
+                        onFocus={(e) => e.target.select()}
+                        placeholder="数量"
+                        className="input-field w-full [appearance:auto] [-moz-appearance:auto]"
+                        step={1}
+                        min={1}
+                      />
+                    </div>
+                    <select
+                      value={formData.unit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
+                      className="input-field flex-1 min-w-0"
+                    >
+                      {getAllowedUnits(formData.productType).map(unit => (
+                        <option key={unit.value} value={unit.value}>
+                          {unit.value}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="product-count-form" className="block text-sm font-medium text-gray-700 mb-2">
+                    入り数 *
+                  </label>
                   <input
                     id="product-count-form"
                     type="number"
@@ -396,48 +466,35 @@ export function ProductManagement() {
                     onChange={(e) => setFormData(prev => ({ ...prev, count: parseInt(e.target.value, 10) || 1 }))}
                     onFocus={(e) => e.target.select()}
                     placeholder="入り数"
-                    className="input-field w-full hidden md:block [appearance:auto] [-moz-appearance:auto]"
+                    className="input-field w-full [appearance:auto] [-moz-appearance:auto]"
                     step={1}
                     min={1}
                   />
-                  {/* Mobile: text input to ensure numeric keypad */}
+                </div>
+                <div>
+                  <label htmlFor="product-price-form" className="block text-sm font-medium text-gray-700 mb-2">
+                    価格 (円) *
+                  </label>
                   <input
-                    id="product-count-form-text"
+                    id="product-price-form"
                     type="text"
-                    value={formData.count || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, count: parseInt(e.target.value, 10) || 1 }))}
+                    value={formData.price || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value, 10) || 0 }))}
                     onFocus={(e) => e.target.select()}
-                    placeholder="入り数"
-                    className="input-field w-full md:hidden"
+                    placeholder="価格"
+                    className="input-field"
                     inputMode="numeric"
                     pattern="[0-9]*"
                     required
                   />
                 </div>
               </div>
-              <div>
-                <label htmlFor="product-price-form" className="block text-sm font-medium text-gray-700 mb-2">
-                  価格 (円) *
-                </label>
-                <input
-                  id="product-price-form"
-                  type="text"
-                  value={formData.price || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value, 10) || 0 }))}
-                  onFocus={(e) => e.target.select()}
-                  placeholder="価格"
-                  className="input-field"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  required
-                />
-              </div>
             </div>
 
             
-            {/* Unit Price Preview */}
+            {/* Unit Price Preview - Desktop only (mobile has inline preview) */}
             {formData.quantity > 0 && formData.price > 0 && (
-              <div className="bg-white p-3 rounded border-l-4 border-blue-500">
+              <div className="hidden md:block bg-white p-3 rounded border-l-4 border-blue-500">
                 <p className="text-sm text-gray-600">単価プレビュー:</p>
                 <p className="font-semibold text-blue-700">
                   {calculateUnitPrice(formData.quantity, formData.count, formData.price).toFixed(2)}円/{formData.unit}

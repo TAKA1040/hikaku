@@ -20,12 +20,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const { setCurrentUserId, clearUserData } = useAppStore()
-  const supabase: SupabaseClient = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // 環境変数チェック
+  const hasValidConfig = supabaseUrl && supabaseAnonKey
+  
+  // Supabase client (only create if config is valid)
+  const supabase: SupabaseClient | null = hasValidConfig 
+    ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+    : null
 
   useEffect(() => {
+    if (!supabase) {
+      console.error('Supabase 環境変数が未設定です。NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY を .env.local に設定してください。')
+      setLoading(false)
+      return
+    }
+
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -71,9 +83,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       authListener?.unsubscribe();
     };
-  }, [supabase.auth, clearUserData, setCurrentUserId]);
+  }, [supabase, clearUserData, setCurrentUserId]);
 
   const signInWithGoogle = async () => {
+    if (!supabase) {
+      console.error('Supabase が初期化されていません')
+      return
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
     })
@@ -83,6 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!supabase) {
+      console.error('Supabase が初期化されていません')
+      return
+    }
     await supabase.auth.signOut()
     setUser(null)
   }
@@ -92,6 +112,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signInWithGoogle,
     signOut,
+  }
+
+  // 環境変数が未設定の場合は設定画面を表示
+  if (!hasValidConfig) {
+    return (
+      <AuthContext.Provider value={value}>
+        <div style={{ padding: 16 }}>
+          <p style={{ color: '#b91c1c', fontWeight: 600 }}>環境変数が未設定です</p>
+          <p style={{ marginTop: 8 }}>
+            .env.local を作成し、NEXT_PUBLIC_SUPABASE_URL と NEXT_PUBLIC_SUPABASE_ANON_KEY を設定してください。
+          </p>
+          <pre style={{ marginTop: 8, background: '#f3f4f6', padding: 12 }}>
+{`# 例 (.env.local)
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxxxxxxxxxxxxxxxxxxxxxx`}
+          </pre>
+        </div>
+      </AuthContext.Provider>
+    )
   }
 
   return (
@@ -110,3 +149,4 @@ export function useAuth() {
   }
   return context
 }
+
