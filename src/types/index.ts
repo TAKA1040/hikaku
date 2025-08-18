@@ -9,12 +9,16 @@ export const unitTypeSchema = z.object({
 
 export type UnitType = z.infer<typeof unitTypeSchema>
 
-// Product Type Schema
+// Product Type Schema - updated to match database schema
 export const productTypeSchema = z.object({
+  id: z.string().optional(),
   value: z.string(),
   label: z.string(),
+  unit: z.string(), // Keep for backward compatibility
+  allowedUnits: z.array(z.string()),
   defaultUnit: z.string(),
-  allowedUnits: z.array(z.string())
+  userId: z.string().nullable().optional(), // For user-specific types
+  createdAt: z.string().optional()
 })
 
 export type ProductTypeInfo = z.infer<typeof productTypeSchema>

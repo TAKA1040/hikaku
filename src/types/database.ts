@@ -41,6 +41,9 @@ export interface Database {
           value: string
           label: string
           unit: string
+          allowed_units: string[] // JSONB array of allowed units
+          default_unit: string
+          user_id: string | null // NULL for global types, user ID for custom types
           created_at: string
         }
         Insert: {
@@ -48,6 +51,9 @@ export interface Database {
           value: string
           label: string
           unit: string
+          allowed_units: string[]
+          default_unit: string
+          user_id?: string | null
           created_at?: string
         }
         Update: {
@@ -55,6 +61,9 @@ export interface Database {
           value?: string
           label?: string
           unit?: string
+          allowed_units?: string[]
+          default_unit?: string
+          user_id?: string | null
           created_at?: string
         }
       }

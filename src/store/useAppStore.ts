@@ -12,9 +12,10 @@ interface AppState {
   setCurrentProduct: (product: Partial<CurrentProduct>) => void
   resetCurrentProduct: () => void
 
-  // Product types
+  // Product types (now managed by useProductTypes hook)
   productTypes: ProductTypeInfo[]
   setProductTypes: (types: ProductTypeInfo[]) => void
+  addProductType: (productType: Omit<ProductTypeInfo, 'id' | 'createdAt'>) => void
 
   // Cross-component intents
   productAddPrefill: Partial<ProductData> | null
@@ -81,62 +82,79 @@ const defaultProductTypes: ProductTypeInfo[] = [
   { 
     value: 'toilet_paper', 
     label: 'トイレットペーパー', 
+    unit: 'm', // Keep for backward compatibility
     defaultUnit: 'm',
     allowedUnits: ['m', 'cm', 'ロール', '個']
   },
   { 
     value: 'wrap', 
     label: 'ラップ', 
+    unit: 'm',
     defaultUnit: 'm',
     allowedUnits: ['m', 'cm', '個']
   },
   { 
     value: 'tissue', 
     label: 'ティッシュペーパー', 
+    unit: '箱',
     defaultUnit: '箱',
     allowedUnits: ['箱', '個']
   },
   { 
     value: 'detergent', 
     label: '洗剤', 
+    unit: 'ml',
     defaultUnit: 'ml',
     allowedUnits: ['ml', 'L', 'g', 'kg']
   },
   { 
     value: 'shampoo', 
     label: 'シャンプー', 
+    unit: 'ml',
     defaultUnit: 'ml',
     allowedUnits: ['ml', 'L']
   },
   { 
     value: 'rice', 
     label: 'お米', 
+    unit: 'kg',
     defaultUnit: 'kg',
     allowedUnits: ['kg', 'g']
   },
   { 
     value: 'oil', 
     label: '食用油', 
+    unit: 'ml',
     defaultUnit: 'ml',
     allowedUnits: ['ml', 'L']
   },
   { 
     value: 'milk', 
     label: '牛乳', 
+    unit: 'ml',
     defaultUnit: 'ml',
     allowedUnits: ['ml', 'L']
   },
   { 
     value: 'bread', 
     label: 'パン', 
+    unit: '枚',
     defaultUnit: '枚',
     allowedUnits: ['枚', '個', 'g', 'kg']
   },
   { 
     value: 'eggs', 
     label: '卵', 
+    unit: '個',
     defaultUnit: '個',
     allowedUnits: ['個', 'kg', 'g']
+  },
+  {
+    value: 'other',
+    label: 'その他',
+    unit: '個',
+    defaultUnit: '個',
+    allowedUnits: ['個']
   }
 ]
 
@@ -199,6 +217,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
       // Product types
       productTypes: defaultProductTypes,
       setProductTypes: (productTypes) => set({ productTypes }),
+      addProductType: (productType) => set((state) => ({
+        productTypes: [...state.productTypes, {
+          ...productType,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString()
+        }]
+      })),
 
       // Stores and products data  
       stores: [],

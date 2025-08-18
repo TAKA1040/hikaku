@@ -10,9 +10,14 @@ export interface Product {
 }
 
 export interface ProductType {
+  id?: string;
   value: string;
   label: string;
-  unit: string;
+  unit: string; // Keep for backward compatibility
+  allowedUnits: string[];
+  defaultUnit: string;
+  userId?: string | null; // For user-specific types
+  createdAt?: string;
 }
 
 export interface ComparisonResult {

@@ -1,17 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore, availableUnits } from '@/store/useAppStore'
-import { Target, Plus, ShoppingBag } from 'lucide-react'
+import { useProductTypes } from '@/hooks/useProductTypes'
+import { Target, Plus, ShoppingBag, Loader2 } from 'lucide-react'
+import { AddProductTypeModal } from '@/components/modals/AddProductTypeModal'
 import toast from 'react-hot-toast'
 
 export function CurrentProductForm() {
   const { 
     currentProduct, 
     setCurrentProduct, 
-    productTypes,
+    productTypes: localProductTypes,
+    setProductTypes,
     setProductAddPrefill
   } = useAppStore()
+  
+  // Use Supabase hook for product types
+  const { 
+    productTypes: dbProductTypes, 
+    loading: productTypesLoading, 
+    addProductType: addProductTypeToDb 
+  } = useProductTypes()
+  
+  // Modal state for adding new product type
+  const [isAddProductTypeModalOpen, setIsAddProductTypeModalOpen] = useState(false)
+  
+  // Sync database product types with local state
+  useEffect(() => {
+    if (!productTypesLoading && dbProductTypes.length > 0) {
+      setProductTypes(dbProductTypes)
+    }
+  }, [dbProductTypes, productTypesLoading, setProductTypes])
+  
+  // Use database product types if available, otherwise fall back to local
+  const productTypes = dbProductTypes.length > 0 ? dbProductTypes : localProductTypes
 
   const currentTypeInfo = productTypes.find(pt => pt.value === currentProduct.type) || productTypes[0]
   const allowedUnits = availableUnits.filter(unit => 
@@ -28,6 +51,31 @@ export function CurrentProductForm() {
       processedValue = value
     }
     setCurrentProduct({ [field]: processedValue })
+  }
+
+  // Handle "その他" selection
+  const handleTypeChange = (newType: string) => {
+    if (newType === 'other') {
+      setIsAddProductTypeModalOpen(true)
+      return
+    }
+    handleInputChange('type', newType)
+  }
+
+  // Handle new product type submission
+  const handleAddProductType = async (productType: Parameters<typeof addProductTypeToDb>[0]) => {
+    try {
+      const newType = await addProductTypeToDb(productType)
+      // Update local state immediately
+      setProductTypes([...productTypes.filter(pt => pt.value !== 'other'), newType, productTypes.find(pt => pt.value === 'other')!])
+      // Switch to the newly created product type
+      handleInputChange('type', productType.value)
+      setIsAddProductTypeModalOpen(false)
+      toast.success(`「${productType.label}」が追加されました`)
+    } catch (error) {
+      console.error('Error adding product type:', error)
+      toast.error('商品タイプの追加に失敗しました')
+    }
   }
 
   // --- Comparison Variants (数量/単位・入り数・価格) ---
@@ -156,18 +204,26 @@ export function CurrentProductForm() {
             <label htmlFor="product-type" className="block text-sm font-medium text-gray-700 mb-2">
               商品タイプ
             </label>
-            <select
-              id="product-type"
-              value={currentProduct.type}
-              onChange={(e) => handleInputChange('type', e.target.value)}
-              className="input-field"
-            >
-              {productTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="product-type"
+                value={currentProduct.type}
+                onChange={(e) => handleTypeChange(e.target.value)}
+                className="input-field"
+                disabled={productTypesLoading}
+              >
+                {productTypes.map(type => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              {productTypesLoading && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+                </div>
+              )}
+            </div>
           </div>
           
           <div>
@@ -391,6 +447,13 @@ export function CurrentProductForm() {
           )}
         </div>
       </div>
+      
+      {/* Add Product Type Modal */}
+      <AddProductTypeModal
+        isOpen={isAddProductTypeModalOpen}
+        onClose={() => setIsAddProductTypeModalOpen(false)}
+        onSubmit={handleAddProductType}
+      />
     </div>
   )
 }
