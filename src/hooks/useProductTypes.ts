@@ -58,22 +58,8 @@ export function useProductTypes() {
       setLoading(true)
       setError(null)
       
-      if (!currentUser) {
-        // If not logged in, only show basic 4 types + "その他"
-        const basicTypes: ProductTypeInfo[] = [
-          { value: 'wrap', label: 'ラップ', unit: 'm', allowedUnits: ['m', 'cm', '個'], defaultUnit: 'm', userId: null },
-          { value: 'toilet_paper', label: 'トイレットペーパー', unit: 'ロール', allowedUnits: ['m', 'cm', 'ロール', '個'], defaultUnit: 'm', userId: null },
-          { value: 'tissue', label: 'ティッシュペーパー', unit: '箱', allowedUnits: ['箱', '個'], defaultUnit: '箱', userId: null },
-          { value: 'detergent', label: '洗剤', unit: 'ml', allowedUnits: ['ml', 'L', 'g', 'kg'], defaultUnit: 'ml', userId: null },
-          { value: 'other', label: 'その他', unit: '個', allowedUnits: ['個'], defaultUnit: '個', userId: null }
-        ]
-        setProductTypes(basicTypes)
-        setLoading(false)
-        return
-      }
-      
-      // For logged-in users: fetch global types + user-specific types
-      const userIdPrefix = currentUser.id.substring(0, 8)
+      // Always fetch from database first, then add user-specific types if logged in
+      // This ensures consistency between database and frontend
       
       const { data: allTypes, error: fetchError } = await supabase
         .from('product_types')
@@ -84,20 +70,28 @@ export function useProductTypes() {
         throw fetchError
       }
       
-      // Separate global and user-specific types
-      const globalTypes = allTypes.filter(pt => 
-        !pt.value.includes('_') || !pt.value.endsWith(`_${userIdPrefix}`)
-      )
+      let globalTypes = allTypes
+      let userTypes: ProductType[] = []
       
-      const userTypes = allTypes.filter(pt => 
-        pt.value.includes('_') && pt.value.endsWith(`_${userIdPrefix}`)
-      )
+      // If user is logged in, separate global and user-specific types
+      if (currentUser) {
+        const userIdPrefix = currentUser.id.substring(0, 8)
+        
+        globalTypes = allTypes.filter(pt => 
+          !pt.value.includes('_') || !pt.value.endsWith(`_${userIdPrefix}`)
+        )
+        
+        userTypes = allTypes.filter(pt => 
+          pt.value.includes('_') && pt.value.endsWith(`_${userIdPrefix}`)
+        )
+      }
       
       // Convert global types
       const convertedGlobalTypes = globalTypes.map(convertToProductTypeInfo)
       
       // Convert user-specific types (remove user ID suffix from value for frontend)
       const convertedUserTypes = userTypes.map(dbType => {
+        const userIdPrefix = currentUser!.id.substring(0, 8)
         const originalValue = dbType.value.replace(`_${userIdPrefix}`, '')
         return {
           id: dbType.id,
@@ -106,7 +100,7 @@ export function useProductTypes() {
           unit: dbType.unit,
           allowedUnits: ['個'], // Default, will be enhanced later
           defaultUnit: dbType.unit,
-          userId: currentUser.id,
+          userId: currentUser!.id,
           createdAt: dbType.created_at
         } as ProductTypeInfo
       })
@@ -193,9 +187,7 @@ export function useProductTypes() {
   }
 
   useEffect(() => {
-    if (currentUser !== null) { // Only fetch when user state is determined
-      fetchProductTypes()
-    }
+    fetchProductTypes() // Always fetch product types, regardless of auth state
   }, [currentUser]) // Re-fetch when user changes
 
   return {
